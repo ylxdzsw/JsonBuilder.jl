@@ -15,15 +15,15 @@ minified_json_str = @json """
 {
     title: $title,                      # use hashtag to leave a comment
     tags: $tags,                        # just like julia code
-    text: $(string(text, "\n", now())), # use inteprolation incase you need a hash or dollar
-    author: $author,                    # or something need escape (like \uxxxx) in the key
+    text: $(string(text, "\n", now())), # use inteprolation if the key contains anything
+    author: $author,                    # other than just plain letters
     nested: {
         num: 123,
         bool: true,
-        "or anything json": [{}, {}]
+        $("or anything json"): [{}, {}]
     }
 }
 """
-
-@json STDOUT "['direct', 'output', 'to', $("an IO object")]"
 ```
+
+use `...` to force iterpolate as an object or array, like ` @json "{ name: 'something', $otherinfo... }" `
