@@ -16,7 +16,7 @@ minified_json_str = @json """
     tags: $tags,                # support all types that `JSON.jl` can handle
     author: {id:2, $author...}, # use `...` to iterpolate as "mixin", support any iterable (of course including `Associative{K, V}`)
     nested: {                   # nested objects and arrays just work
-        num: 123,               # plain JSON literals are keeped "as-is" without check.
+        num: 123,               # plain JSON literals are kept "as-is" without check.
         bool: true,
         "or anything json": [{}, {}]
     }

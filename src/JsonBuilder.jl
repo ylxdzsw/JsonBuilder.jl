@@ -195,7 +195,7 @@ function parse_key!(p::Parser)
         while !done(p) && any(next(p) in x for x in ('a':'z', 'A':'Z', '0':'9', "\$_"))
             p.j += 1
         end
-        push!(p, Str(p[p.i, start:p.j-1]))
+        push!(p, Raw('"'), Raw(p[p.i, start:p.j-1]), Raw('"'))
     end
 end
 
