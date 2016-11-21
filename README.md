@@ -1,29 +1,25 @@
 JsonBuilder.jl
 ==============
 
-Build json strings with specific schemas fast. Useful when calling Web APIs.
+Build json strings with specific schemas. Useful when calling Web APIs.
 
 ```
 using JsonBuilder
 
 title  = "hello"
 tags   = ["meta", "introduction"]
-text   = "Hello World!"
-author = Dict("name"=>"ylxdzsw", "email"=>"xxx@example.com")
+author = ("name"=>"ylxdzsw", "email"=>"xxx@example.com")
 
 minified_json_str = @json """
 {
-    title: $title,                      # use hashtag to leave a comment
-    tags: $tags,                        # just like julia code
-    text: $(string(text, "\n", now())), # use inteprolation if the key contains anything
-    author: $author,                    # other than just plain letters
-    nested: {
-        num: 123,
+    title: $title,              # use hash symbol to leave a comment just like julia code
+    tags: $tags,                # support all types that `JSON.jl` can handle
+    author: {id:2, $author...}, # use `...` to iterpolate as "mixin", support any iterable (of course including `Associative{K, V}`)
+    nested: {                   # nested objects and arrays just work
+        num: 123,               # plain JSON literals are keeped "as-is" without check.
         bool: true,
-        $("or anything json"): [{}, {}]
+        "or anything json": [{}, {}]
     }
 }
 """
 ```
-
-use `...` to force iterpolate as an object or array, like ` @json "{ name: 'something', $otherinfo... }" `
