@@ -15,7 +15,7 @@ macro json_str(s)
     quote
         io = IOBuffer()
         $(json(parse("\"$(escape_string(s))\""))...)
-        takebuf_string(io)
+        VERSION > v"0.6-" ? String(take!(io)) : takebuf_string(io)
     end
 end
 
@@ -23,7 +23,7 @@ macro json(s)
     quote
         io = IOBuffer()
         $(json(s)...)
-        takebuf_string(io)
+        VERSION > v"0.6-" ? String(take!(io)) : takebuf_string(io)
     end
 end
 
@@ -209,7 +209,7 @@ function parse_char!(x::Char, p::Parser)
 end
 
 macro gen(ex)
-    :( push!(result, $(Expr(:quote, ex))) )
+    :( push!($(esc(:result)), $(Expr(:quote, ex))) )
 end
 
 function code_gen(x)
