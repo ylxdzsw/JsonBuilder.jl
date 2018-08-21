@@ -1,5 +1,3 @@
-__precompile__()
-
 module JsonBuilder
 
 import JSON: print
@@ -14,8 +12,8 @@ export @json, @json_str
 macro json_str(s)
     quote
         io = IOBuffer()
-        $(json(parse("\"$(escape_string(s))\""))...)
-        VERSION > v"0.6-" ? String(take!(io)) : takebuf_string(io)
+        $(json(Meta.parse("\"$(escape_string(s))\""))...)
+        String(take!(io))
     end
 end
 
@@ -23,7 +21,7 @@ macro json(s)
     quote
         io = IOBuffer()
         $(json(s)...)
-        VERSION > v"0.6-" ? String(take!(io)) : takebuf_string(io)
+        String(take!(io))
     end
 end
 
@@ -42,7 +40,7 @@ function json(s)
     end
 
     if !isa(s.args[1], String) # quick fix for invocations like `@json "$x"`
-        unshift!(s.args, " ")
+        pushfirst!(s.args, " ")
     end
 
     x = Parser([], s.args, 1, 1)
@@ -50,15 +48,16 @@ function json(s)
     code_gen(x)
 end
 
-abstract Token
-type ObjectMixin <: Token end
-type ArrayMixin  <: Token end
-type EOF <: Token end
-type Var <: Token content end
-type Str <: Token content end
-type Raw <: Token content end
+abstract type Token 
+end
+mutable struct ObjectMixin <: Token end
+mutable struct ArrayMixin  <: Token end
+mutable struct EOF <: Token end
+mutable struct Var <: Token content end
+mutable struct Str <: Token content end
+mutable struct Raw <: Token content end
 
-type Parser
+mutable struct Parser
     result::Vector{Token}; s; i::Int; j::Int
 end
 
