@@ -2,28 +2,27 @@ __precompile__()
 
 module JsonBuilder
 
-import JSON: print
-import Base: push!, getindex, done, next, eof
+import JSON2
 
-export @json, @json_str
+import Base: push!, iterate, convert, getindex
+
+export JSON, @json, @json_str
+
+struct JSON
+    str::String
+end
+
+convert(::Type{JSON}, x) = JSON2.write(x) |> JSON
+convert(::Type{T}, x::JSON) where T = JSON2.read(x.str, T)
 
 # notes:
 # `io` is a selected name in the generated code, no need to pass as arguments.
-# `print` is for printing as JSON, and `write` is for raw output.
-
-macro json_str(s)
-    quote
-        io = IOBuffer()
-        $(json(parse("\"$(escape_string(s))\""))...)
-        VERSION > v"0.6-" ? String(take!(io)) : takebuf_string(io)
-    end
-end
 
 macro json(s)
     quote
         io = IOBuffer()
         $(json(s)...)
-        VERSION > v"0.6-" ? String(take!(io)) : takebuf_string(io)
+        String(take!(io))
     end
 end
 
@@ -42,7 +41,7 @@ function json(s)
     end
 
     if !isa(s.args[1], String) # quick fix for invocations like `@json "$x"`
-        unshift!(s.args, " ")
+        pushfirst!(s.args, " ")
     end
 
     x = Parser([], s.args, 1, 1)
@@ -50,21 +49,22 @@ function json(s)
     code_gen(x)
 end
 
-abstract Token
-type ObjectMixin <: Token end
-type ArrayMixin  <: Token end
-type EOF <: Token end
-type Var <: Token content end
-type Str <: Token content end
-type Raw <: Token content end
+abstract type Token end
+struct ObjectMixin <: Token end
+struct ArrayMixin  <: Token end
+struct EOF <: Token end
+struct Var <: Token content end
+struct Str <: Token content end
+struct Raw <: Token content end
 
-type Parser
+mutable struct Parser
     result::Vector{Token}; s; i::Int; j::Int
 end
 
 push!(p::Parser, x) = push!(p.result, x)
 getindex(p::Parser, x) = p.s[x]
 getindex(p::Parser, x, y) = p.s[x][y]
+
 done(p::Parser) = p.j > length(p[p.i])
 eof(p::Parser)  = p.i >= length(p.s)
 next(p::Parser) = !done(p) ? p[p.i][p.j] :
@@ -175,7 +175,7 @@ function parse_string!(p::Parser)
     p.j += 1
     while !done(p)
         if next(p) == q
-            push!(p, Str(p[p.i, start+1:p.j-1])) # JSON.print will add quotes around them, so no need to insert quotes here
+            push!(p, Str(p[p.i, start+1:p.j-1]))
             p.j += 1
             return
         end
@@ -219,7 +219,7 @@ function code_gen(x)
 
     while x[i] != EOF()
         if isa(x[i], Str)
-            @gen print(io, $(x[i].content))
+            @gen write(io, '"', $(x[i].content), '"')
         elseif isa(x[i], Raw)
             if isa(x[i+1], Raw)
                 x[i+1] = Raw(string(x[i].content, x[i+1].content))
@@ -230,16 +230,16 @@ function code_gen(x)
             if isa(x[i+1], ObjectMixin)
                 @gen join(io, $(esc(x[i].content)), ',') do io, x
                     k, v = x
-                    print(io, string(k))
+                    write(io, '"', string(k), '"')
                     write(io, ':')
-                    print(io, v)
+                    write(io, convert(JSON, v).str)
                 end
                 i += 1 # skip the Mixin Token
             elseif isa(x[i+1], ArrayMixin)
-                @gen join(print, io, $(esc(x[i].content)), ',')
+                @gen join((io, x)->write(io, convert(JSON, x).str), io, $(esc(x[i].content)), ',')
                 i += 1 # skip the Mixin Token
             else
-                @gen print(io, $(esc(x[i].content)))
+                @gen write(io, convert(JSON, $(esc(x[i].content))).str)
             end
         else
             error("BUG, Please fire an issue with your json template string.")
@@ -252,17 +252,15 @@ function code_gen(x)
 end
 
 function join(f, io::IO, iter, delim)
-    i = start(iter)
+    first = true
 
-    if !done(iter, i)
-        str, i  = next(iter, i)
-        f(io, str)
-    end
-
-    while !done(iter, i)
-        write(io, delim)
-        str, i  = next(iter,i)
-        f(io, str)
+    for i in iter
+        if first
+            first = false
+        else
+            write(io, delim)
+        end
+        f(io, i)
     end
 end
 
