@@ -51,7 +51,8 @@ end
 
 abstract type Token end
 struct ObjectMixin <: Token end
-struct ArrayMixin  <: Token end
+struct ArrayMixin <: Token end
+struct RawMixin <: Token end
 struct EOF <: Token end
 struct Var <: Token content end
 struct Str <: Token content end
@@ -90,11 +91,12 @@ end
 function parse_value!(p::Parser)
     parse_space!(p)
     if done(p)
-        if eof(p)
-            error("malformed json")
-        else
-            push!(p, Var(p[p.i+1]))
-            p.i, p.j = p.i + 2, 1
+        eof(p) && error("malformed json")
+        push!(p, Var(p[p.i+1]))
+        p.i, p.j = p.i + 2, 1
+        if !done(p) && next(p) == '!' # raw text mixin
+            push!(p, RawMixin())
+            p.j += 1
         end
     elseif next(p) == '{'
         parse_object!(p)
@@ -237,6 +239,9 @@ function code_gen(x)
                 i += 1 # skip the Mixin Token
             elseif isa(x[i+1], ArrayMixin)
                 @gen join((io, x)->write(io, convert(JSON, x).str), io, $(esc(x[i].content)), ',')
+                i += 1 # skip the Mixin Token
+            elseif isa(x[i+1], RawMixin)
+                @gen print(io, $(esc(x[i].content)))
                 i += 1 # skip the Mixin Token
             else
                 @gen write(io, convert(JSON, $(esc(x[i].content))).str)

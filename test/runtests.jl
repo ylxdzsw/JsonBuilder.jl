@@ -16,4 +16,5 @@ end
 @testset "mixin" begin
     @test "{\"a\":3,\"b\":4}" == @json "{$(pairs((a=3, b=4)))...}"
     @test "[3,4]" == @json "[$((3,4))...]"
+    @test "[3,{\"x\":3}]" == @json "[3, $("{\"x\":3}")!]"
 end
