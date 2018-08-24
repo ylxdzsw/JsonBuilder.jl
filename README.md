@@ -1,6 +1,9 @@
 JsonBuilder.jl
 ==============
 
+[![Build Status](https://travis-ci.org/ylxdzsw/JsonBuilder.jl.svg?branch=master)](https://travis-ci.org/ylxdzsw/JsonBuilder.jl)
+[![Coverage Status](https://coveralls.io/repos/github/ylxdzsw/JsonBuilder.jl/badge.svg?branch=master)](https://coveralls.io/github/ylxdzsw/JsonBuilder.jl?branch=master)
+
 Build json strings with specific schemas. Useful when calling Web APIs.
 
 ```
