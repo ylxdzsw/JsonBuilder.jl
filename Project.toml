@@ -1,2 +1,7 @@
+name = "JsonBuilder"
+uuid = "a48b6e3a-9126-5436-8006-6997aee2d650"
+author = ["Zhang Shiwei <ylxdzsw@gmail.com>"]
+version = "1.0.0"
+
 [deps]
 JSON2 = "2535ab7d-5cd8-5a07-80ac-9b1792aadce3"
